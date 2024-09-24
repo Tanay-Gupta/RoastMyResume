@@ -6,7 +6,7 @@ st.title("RoastMyResume – Where Weak Resumes Get Fired Up!")
 st.write(
     "At RoastMyResume, we take your lackluster resume and turn it into a masterpiece through witty, honest, and constructive feedback. Whether you're looking for a career boost or just want to see your CV go up in flames (in the best way possible), we’ve got the perfect roast for you. Get ready for tough love that transforms weak resumes into job-winning powerhouses. Your next big opportunity starts here! "
 )
-llm = dspy.Google(model = 'gemini-1.5-flash-latest', api_key=st.secrets["GEMINI_API "])
+llm = dspy.Google(model = 'gemini-1.5-flash-latest', api_key=st.secrets["GEMINI_API"])
 
 class RoastSignature(dspy.Signature):
     """You are professional roaster, you have to roast the user's resume as much as you can based upon the content"""
