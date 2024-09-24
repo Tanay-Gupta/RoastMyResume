@@ -1,53 +1,31 @@
 import streamlit as st
-from openai import OpenAI
-
+import PyPDF2
+import dspy 
 # Show title and description.
-st.title("📄 Document question answering")
+st.title("RoastMyResume – Where Weak Resumes Get Fired Up!")
 st.write(
-    "Upload a document below and ask a question about it – GPT will answer! "
-    "To use this app, you need to provide an OpenAI API key, which you can get [here](https://platform.openai.com/account/api-keys). "
+    "At RoastMyResume, we take your lackluster resume and turn it into a masterpiece through witty, honest, and constructive feedback. Whether you're looking for a career boost or just want to see your CV go up in flames (in the best way possible), we’ve got the perfect roast for you. Get ready for tough love that transforms weak resumes into job-winning powerhouses. Your next big opportunity starts here! "
 )
+llm = dspy.Google(model = 'gemini-1.5-flash-latest', api_key=st.secrets["GEMINI_API "])
 
-# Ask user for their OpenAI API key via `st.text_input`.
-# Alternatively, you can store the API key in `./.streamlit/secrets.toml` and access it
-# via `st.secrets`, see https://docs.streamlit.io/develop/concepts/connections/secrets-management
-openai_api_key = st.text_input("OpenAI API Key", type="password")
-if not openai_api_key:
-    st.info("Please add your OpenAI API key to continue.", icon="🗝️")
-else:
+class RoastSignature(dspy.Signature):
+    """You are professional roaster, you have to roast the user's resume as much as you can based upon the content"""
+    content: str = dspy.InputField(desc="containing the user uploaded resume text")
+    roast_answer: str = dspy.OutputField(desc="Roast the user's resume as badly as you can")
 
-    # Create an OpenAI client.
-    client = OpenAI(api_key=openai_api_key)
 
-    # Let the user upload a file via `st.file_uploader`.
-    uploaded_file = st.file_uploader(
-        "Upload a document (.txt or .md)", type=("txt", "md")
+
+uploaded_file = st.file_uploader(
+        "Upload a Resume (.pdf)", type=("pdf"), accept_multiple_files=False
     )
-
-    # Ask the user for a question via `st.text_area`.
-    question = st.text_area(
-        "Now ask a question about the document!",
-        placeholder="Can you give me a short summary?",
-        disabled=not uploaded_file,
-    )
-
-    if uploaded_file and question:
-
-        # Process the uploaded file and question.
-        document = uploaded_file.read().decode()
-        messages = [
-            {
-                "role": "user",
-                "content": f"Here's a document: {document} \n\n---\n\n {question}",
-            }
-        ]
-
-        # Generate an answer using the OpenAI API.
-        stream = client.chat.completions.create(
-            model="gpt-3.5-turbo",
-            messages=messages,
-            stream=True,
-        )
-
+if uploaded_file:
+    pdf_reader = PyPDF2.PdfReader(uploaded_file)
+    content=''
+    for page in range(len(pdf_reader.pages)):
+            content += pdf_reader.pages[page].extract_text()
+            
+  
+    result= dspy.ChainOfThought(signature=RoastSignature)
+    roast=result(content=content).roast_answer
         # Stream the response to the app using `st.write_stream`.
-        st.write_stream(stream)
+    st.write_stream(roast)
