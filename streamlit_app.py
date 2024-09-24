@@ -1,31 +1,57 @@
 import streamlit as st
 import PyPDF2
-import dspy 
-# Show title and description.
+import dspy
+
+# Set up the Google Gemini model for AI-based roasting
+llm = dspy.Google(model='gemini-1.5-flash-latest', api_key=st.secrets["GEMINI_API"])
+dspy.settings.configure(lm=llm)
+
+# Configure Streamlit page
+st.set_page_config(
+    page_title="RoastMyResume – Where Weak Resumes Get Fired Up!", 
+    page_icon="🔥", 
+    layout="centered"
+)
+
+# Display the app title and description
 st.title("RoastMyResume – Where Weak Resumes Get Fired Up!")
 st.write(
-    "At RoastMyResume, we take your lackluster resume and turn it into a masterpiece through witty, honest, and constructive feedback. Whether you're looking for a career boost or just want to see your CV go up in flames (in the best way possible), we’ve got the perfect roast for you. Get ready for tough love that transforms weak resumes into job-winning powerhouses. Your next big opportunity starts here! "
+    """
+    Welcome to **RoastMyResume**, where AI brings the heat! 🔥 
+    Upload your resume and get a witty, brutally honest roast that helps you level up your job hunt.
+    """
 )
-llm = dspy.Google(model = 'gemini-1.5-flash-latest', api_key=st.secrets["GEMINI_API"])
 
+# Define the roast signature with input and output fields  
 class RoastSignature(dspy.Signature):
-    """You are professional roaster, you have to roast the user's resume as much as you can based upon the content"""
-    content: str = dspy.InputField(desc="containing the user uploaded resume text")
-    roast_answer: str = dspy.OutputField(desc="Roast the user's resume as badly as you can")
+    """You are professional resume roaster that delivers scathing critiques based on uploaded content."""
+    content: str = dspy.InputField(desc="The user's uploaded resume content.")
+    roast_answer: str = dspy.OutputField(desc="The roast for the user's resume as badly as you can")
 
-
-
+# Resume file uploader
 uploaded_file = st.file_uploader(
-        "Upload a Resume (.pdf)", type=("pdf"), accept_multiple_files=False
-    )
+    label="Upload Your Resume (PDF format)", type="pdf", accept_multiple_files=False
+)
+
+# If a file is uploaded, process it
 if uploaded_file:
-    pdf_reader = PyPDF2.PdfReader(uploaded_file)
-    content=''
-    for page in range(len(pdf_reader.pages)):
-            content += pdf_reader.pages[page].extract_text()
-            
-  
-    result= dspy.ChainOfThought(signature=RoastSignature)
-    roast=result(content=content).roast_answer
-        # Stream the response to the app using `st.write_stream`.
-    st.write_stream(roast)
+    try:
+        # Extract text content from the uploaded PDF
+        pdf_reader = PyPDF2.PdfReader(uploaded_file)
+        content = ''.join([page.extract_text() for page in pdf_reader.pages])
+
+        # Generate the roast using the AI model
+        roast_resume = dspy.ChainOfThought(signature=RoastSignature)
+        roast = roast_resume(content=content).roast_answer
+
+        # Display the roast in markdown format
+        st.markdown(f"### 🔥 Here's your roast: \n{roast}")
+    except Exception as e:
+        st.error(f"Error processing the file: {e}")
+else:
+    st.info("Please upload a PDF resume to get started.")
+
+# Footer with links
+st.markdown("---")
+st.caption("RoastMyResume – Transforming weak resumes into job-winning powerhouses, one roast at a time.")
+st.caption("Connect with me: [LinkedIn](https://www.linkedin.com/in/tanay--gupta/) | [Portfolio](https://tanay-gupta.github.io/MyPortfolio) | [Instagram](https://www.instagram.com/tanaywhooodes/) | ")
