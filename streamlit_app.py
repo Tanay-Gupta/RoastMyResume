@@ -8,6 +8,7 @@ dspy.settings.configure(lm=llm)
 
 # Configure Streamlit page
 st.set_page_config(
+    meta = 'Roast My Resume – Where Weak Resumes Get Fired Up! aka Resume Roaster',
     page_title="RoastMyResume – Where Weak Resumes Get Fired Up!", 
     page_icon="🔥", 
     layout="centered"
