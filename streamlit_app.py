@@ -24,7 +24,7 @@ st.write(
 
 # Define the roast signature with input and output fields  
 class RoastSignature(dspy.Signature):
-    """You are professional resume roaster that delivers scathing critiques based on uploaded content."""
+    """You are professional resume roaster that delivers scathing critiques as much as you can based on uploaded content."""
     content: str = dspy.InputField(desc="The user's uploaded resume content.")
     roast_answer: str = dspy.OutputField(desc="The roast for the user's resume as badly as you can")
 
