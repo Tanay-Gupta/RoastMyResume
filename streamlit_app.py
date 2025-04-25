@@ -3,7 +3,7 @@ import PyPDF2
 import dspy
 
 # Set up the Google Gemini model for AI-based roasting
-llm = dspy.Google(model='gemini-1.5-flash-latest', api_key=st.secrets["GEMINI_API"])
+llm = dspy.LM(model='gemini-1.5-flash-latest', api_key=st.secrets["GEMINI_API"])
 dspy.settings.configure(lm=llm)
 
 # Configure Streamlit page
