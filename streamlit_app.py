@@ -1,4 +1,10 @@
 import streamlit as st
+# Configure Streamlit page
+st.set_page_config(
+    page_title="RoastMyResume – Where Weak Resumes Get Fired Up!",
+    page_icon="🔥",
+    layout="centered"
+)
 import PyPDF2
 import dspy
 
@@ -11,13 +17,6 @@ def configure_dspy_llm(gemini_api_key):
 
 # Configure DSPy and get the llm
 llm = configure_dspy_llm(st.secrets["GEMINI_API"])
-
-# Configure Streamlit page
-st.set_page_config(
-    page_title="RoastMyResume – Where Weak Resumes Get Fired Up!",
-    page_icon="🔥",
-    layout="centered"
-)
 
 # Display the app title and description
 st.title("RoastMyResume – Where Weak Resumes Get Fired Up!")
