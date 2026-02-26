@@ -2,138 +2,154 @@ import streamlit as st
 import PyPDF2
 import dspy
 
-# -------------------- PAGE CONFIG --------------------
+# 1. Configure page for a sleek, app-like feel
 st.set_page_config(
-    page_title="RoastMyResume",
+    page_title="RoastMyResume | Brutal AI Feedback",
     page_icon="🔥",
-    layout="centered"
+    layout="centered",
+    initial_sidebar_state="collapsed"
 )
 
-# -------------------- CUSTOM CSS --------------------
+# 2. Inject High-Contrast, Minimalist CSS
 st.markdown("""
-<style>
-/* Background */
-.stApp {
-    background: linear-gradient(135deg, #0f0f0f 0%, #1a1a1a 100%);
-    color: #f5f5f5;
-    font-family: 'Inter', sans-serif;
-}
-
-/* Hide Streamlit default header */
-header {visibility: hidden;}
-footer {visibility: hidden;}
-
-/* Hero Title */
-.hero-title {
-    font-size: 3rem;
-    font-weight: 700;
-    text-align: center;
-    margin-bottom: 0.5rem;
-}
-
-.hero-sub {
-    text-align: center;
-    font-size: 1.1rem;
-    color: #aaaaaa;
-    margin-bottom: 3rem;
-}
-
-/* Glass Card */
-.glass-card {
-    background: rgba(255, 255, 255, 0.05);
-    padding: 2rem;
-    border-radius: 20px;
-    backdrop-filter: blur(15px);
-    border: 1px solid rgba(255,255,255,0.08);
-}
-
-/* Roast Output */
-.roast-box {
-    background: rgba(255, 87, 87, 0.08);
-    border: 1px solid rgba(255, 87, 87, 0.3);
-    padding: 1.5rem;
-    border-radius: 16px;
-    margin-top: 2rem;
-    font-size: 1.05rem;
-}
-
-/* Upload Button */
-.stFileUploader > div {
-    background: rgba(255,255,255,0.04);
-    border-radius: 12px;
-    padding: 0.5rem;
-}
-
-/* Footer */
-.footer {
-    text-align: center;
-    font-size: 0.8rem;
-    color: #777;
-    margin-top: 4rem;
-}
-</style>
+    <style>
+    /* Clean up the canvas */
+    .block-container {
+        padding-top: 3rem;
+        padding-bottom: 2rem;
+        max-width: 750px;
+    }
+    
+    /* Hide default Streamlit branding for a white-label look */
+    #MainMenu {visibility: hidden;}
+    footer {visibility: hidden;}
+    header {visibility: hidden;}
+    
+    /* Hero Typography */
+    h1 {
+        font-weight: 900 !important;
+        letter-spacing: -1.5px;
+        text-align: center;
+        margin-bottom: 0rem;
+        font-size: 3.5rem !important;
+    }
+    .subtitle {
+        text-align: center;
+        color: #888;
+        font-size: 1.1rem;
+        font-weight: 400;
+        margin-bottom: 3rem;
+        letter-spacing: -0.5px;
+    }
+    
+    /* High-contrast dropzone to draw the eye */
+    [data-testid="stFileUploadDropzone"] {
+        border: 2px dashed #ff4b4b !important;
+        border-radius: 12px;
+        background-color: transparent;
+        transition: all 0.3s ease;
+        padding: 2rem;
+    }
+    [data-testid="stFileUploadDropzone"]:hover {
+        background-color: rgba(255, 75, 75, 0.05);
+        border-color: #ff0000 !important;
+    }
+    
+    /* Styled Roast Output Card */
+    .roast-card {
+        background-color: #1e1e1e; /* Dark theme card */
+        color: #f1f1f1;
+        border-left: 4px solid #ff4b4b;
+        padding: 2rem;
+        border-radius: 8px;
+        box-shadow: 0 10px 30px rgba(0,0,0,0.15);
+        font-size: 1.05rem;
+        line-height: 1.7;
+        margin-top: 1rem;
+        margin-bottom: 2rem;
+    }
+    
+    /* Minimalist Footer */
+    .custom-footer {
+        text-align: center;
+        margin-top: 4rem;
+        font-size: 0.85rem;
+        color: #666;
+        border-top: 1px solid rgba(255, 255, 255, 0.1);
+        padding-top: 1.5rem;
+    }
+    .custom-footer a {
+        color: #ff4b4b;
+        text-decoration: none;
+        font-weight: 600;
+        transition: color 0.2s ease;
+    }
+    .custom-footer a:hover {
+        color: #ff0000;
+    }
+    </style>
 """, unsafe_allow_html=True)
 
-# -------------------- DSPY CONFIG --------------------
-@st.cache_resource
+# 3. Setup LLM Backend
+@st.cache_resource(show_spinner=False)
 def configure_dspy_llm(gemini_api_key):
     llm = dspy.LM(model='gemini/gemini-1.5-flash-latest', api_key=gemini_api_key)
     dspy.settings.configure(lm=llm)
     return llm
 
+# Initialize without disrupting the UI
 llm = configure_dspy_llm(st.secrets["GEMINI_API"])
 
-# -------------------- HERO SECTION --------------------
-st.markdown('<div class="hero-title">🔥 RoastMyResume</div>', unsafe_allow_html=True)
-st.markdown(
-    '<div class="hero-sub">Where weak resumes get fired up. Brutally honest AI feedback that actually helps.</div>',
-    unsafe_allow_html=True
+class RoastSignature(dspy.Signature):
+    """You are professional resume roaster that delivers scathing critiques as much as you can based on uploaded content."""
+    content: str = dspy.InputField(desc="The user's uploaded resume content.")
+    roast_answer: str = dspy.OutputField(desc="The roast for the user's resume as badly as you can")
+
+# 4. Hero Section
+st.markdown("<h1>RoastMyResume.</h1>", unsafe_allow_html=True)
+st.markdown("<p class='subtitle'>Upload your weak resume. Get brutally honest AI feedback. 🔥</p>", unsafe_allow_html=True)
+
+# 5. Interactive Uploader
+uploaded_file = st.file_uploader(
+    label="Drop your PDF here", 
+    type="pdf", 
+    accept_multiple_files=False,
+    label_visibility="hidden" # Hides the default label for a cleaner look
 )
 
-# -------------------- ROAST SIGNATURE --------------------
-class RoastSignature(dspy.Signature):
-    """You are a professional resume roaster who delivers brutally honest but insightful critiques."""
-    content: str = dspy.InputField()
-    roast_answer: str = dspy.OutputField()
+# 6. Core Logic & Micro-interactions
+if uploaded_file:
+    try:
+        # Custom loading state to build anticipation
+        with st.spinner("Analyzing your life choices..."):
+            pdf_reader = PyPDF2.PdfReader(uploaded_file)
+            content = ''.join([page.extract_text() for page in pdf_reader.pages])
+            
+            roast_chain = dspy.ChainOfThought(signature=RoastSignature)
+            roast = roast_chain(content=content).roast_answer
+        
+        # Immediate visual feedback upon completion
+        st.toast("Ouch. That's gonna leave a mark.", icon="🔥")
+        
+        # Display output in the styled card
+        st.markdown(f"""
+            <div class="roast-card">
+                {roast}
+            </div>
+        """, unsafe_allow_html=True)
+        
+    except Exception as e:
+        st.error(f"Something broke. Probably your resume formatting: {e}")
+else:
+    # Empty state placeholder
+    st.markdown("<div style='text-align: center; color: #555; margin-top: 2rem; font-size: 0.9rem;'>Waiting for a victim...</div>", unsafe_allow_html=True)
 
-# -------------------- MAIN CARD --------------------
-with st.container():
-    st.markdown('<div class="glass-card">', unsafe_allow_html=True)
-
-    uploaded_file = st.file_uploader(
-        "Upload your resume (PDF only)",
-        type="pdf",
-        accept_multiple_files=False
-    )
-
-    if uploaded_file:
-        try:
-            with st.spinner("Analyzing... sharpening the knives 🔪"):
-                pdf_reader = PyPDF2.PdfReader(uploaded_file)
-                content = ''.join([page.extract_text() or "" for page in pdf_reader.pages])
-
-                roast_resume = dspy.ChainOfThought(signature=RoastSignature)
-                roast = roast_resume(content=content).roast_answer
-
-            st.markdown(
-                f'<div class="roast-box"><strong>🔥 Here’s your roast:</strong><br><br>{roast}</div>',
-                unsafe_allow_html=True
-            )
-
-        except Exception as e:
-            st.error(f"Error processing file: {e}")
-
-    else:
-        st.markdown("Drop your PDF resume above and let’s see if it survives.")
-
-    st.markdown('</div>', unsafe_allow_html=True)
-
-# -------------------- FOOTER --------------------
-st.markdown("""
-<div class="footer">
-Built by Tanay Gupta •
-<a href="https://www.linkedin.com/in/tanay--gupta/" target="_blank">LinkedIn</a> •
-<a href="https://tanay-gupta.github.io/MyPortfolio" target="_blank">Portfolio</a> •
-<a href="https://www.instagram.com/tanaywhooodes/" target="_blank">Instagram</a>
-</div>
+# 7. Sleek Footer
+st.markdown(f"""
+    <div class="custom-footer">
+        Transforming weak resumes into job-winning powerhouses.<br><br>
+        <a href="https://www.linkedin.com/in/tanay--gupta/" target="_blank">LinkedIn</a> • 
+        <a href="https://tanay-gupta.github.io/MyPortfolio" target="_blank">Portfolio</a> • 
+        <a href="https://www.instagram.com/tanaywhooodes/" target="_blank">Instagram</a>
+    </div>
 """, unsafe_allow_html=True)
